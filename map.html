@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта окружения</title>
+    <!-- Подключаем Leaflet (легкая библиотека для карт) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
+        #map { height: 100vh; width: 100vw; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        // Создаем карту и привязываем ее к контейнеру #map
+        var map = L.map('map').setView([0, 0], 18); // Временные координаты, заменятся позже
+
+        // Добавляем слой карты (используем OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Переменная для хранения маркера и круга
+        var userMarker, accuracyCircle;
+
+        // Функция для успешного получения геолокации
+        function onLocationSuccess(pos) {
+            var lat = pos.coords.latitude;
+            var lng = pos.coords.longitude;
+            var accuracy = pos.coords.accuracy; // Точность в метрах
+
+            // Если маркер и круг уже есть, удаляем их
+            if (userMarker) {
+                map.removeLayer(userMarker);
+            }
+            if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+            }
+
+            // Устанавливаем новый центр карты на полученные координаты
+            map.setView([lat, lng], 18);
+
+            // Добавляем маркер на карту
+            userMarker = L.marker([lat, lng]).addTo(map)
+                .bindPopup("Вы здесь!<br>Точность: " + Math.round(accuracy) + "м.").openPopup();
+
+            // Добавляем круг, отображающий зону точности
+            accuracyCircle = L.circle([lat, lng], {
+                radius: accuracy // Радиус круга равен точности (в метрах) // <-- Исправлено
+            }).addTo(map);
+        }
+
+        // Функция для обработки ошибок геолокации
+        function onLocationError(err) {
+            console.error("Ошибка геолокации:", err);
+            alert("Не удалось получить ваше местоположение. Проверьте настройки геолокации.");
+        }
+
+        // Опции для запроса геолокации: высокая точность
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 30000
+        };
+
+        // Запрашиваем геолокацию у браузера
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, options);
+        } else {
+            alert("Геолокация не поддерживается вашим браузером.");
+        }
+    </script>
+</body>
+</html>
